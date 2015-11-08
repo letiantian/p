@@ -254,8 +254,20 @@ def version():
 
 def help():
     print('''
+    P is a tool to change PS1 quickly. It's designed for bash and zsh.
 
-        help
+    If this help display after you run:
+
+        $ p
+
+    , it's necessary to run:
+
+        $ \p --patch
+    .
+
+    Then, start a new bash/zsh and run p.
+
+    More info can be obtained from https://github.com/someus/p . 
 
         ''')
 

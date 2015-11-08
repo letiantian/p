@@ -15,8 +15,6 @@ Then, start a new bash/zsh and run `p`:
 
 ## Details
 
-
-
 `\p --patch` will append configurations into `~/.bashrc` and `~/.zshrc`. 
 
 For  `~/.bashrc`, the configuration is: 

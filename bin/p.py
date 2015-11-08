@@ -223,12 +223,12 @@ PROMPT_ZSH = (
 
         dict(
             prompt  = '%{$fg[cyan]%}%n@%M %d%{$reset_color%}\n%{$fg[yellow]%}%# %{$reset_color%}',
-            example = '{txtcyn}user@hostname /home/foo{txtrst} \n{txtylw}$ {txtrst}ls -l'.format(**COLORS)
+            example = '{txtcyn}user@hostname /home/foo{txtrst} \n{txtylw}% {txtrst}ls -l'.format(**COLORS)
             ),
 
         dict(
             prompt  = '%{$fg[cyan]%}%n@%M %T %d%{$reset_color%}\n%{$fg[yellow]%}%# %{$reset_color%}',
-            example = '{txtcyn}user@hostname 13:46 /home/foo{txtrst} \n{txtylw}$ {txtrst}ls -l'.format(**COLORS)
+            example = '{txtcyn}user@hostname 13:46 /home/foo{txtrst} \n{txtylw}% {txtrst}ls -l'.format(**COLORS)
             ),
 
     )
@@ -333,13 +333,14 @@ def leave_fullscreen():
 
 
 def handle_sigint(signum, stack):
-  leave_fullscreen()
-  sys.exit(1)
+    leave_fullscreen()
+    sys.exit(1)
 
 
 def handle_sigtstp(signum, stack):
-  leave_fullscreen()
-  os.kill(os.getpid(), signal.SIGSTOP)
+    leave_fullscreen()
+    sys.exit(1)
+    # os.kill(os.getpid(), signal.SIGSTOP)
 
 
 def prev_prompt():
@@ -371,35 +372,47 @@ def display_prompts():
     def display(example, selected=False):
         lines = example.split('\n')
         flagged = False
+        result = []
+        result.append('')
         for line in lines:
             if selected and (not flagged):
-                print("  \033[36m-> \033[0m{line}\033[0m".format(line=line))
+                result.append('  \033[36m-> \033[0m{line}\033[0m'.format(line=line))
                 flagged = True
             else:
-                print("     \033[0m{line}\033[0m".format(line=line))
-        print('')
+                result.append('     \033[0m{line}\033[0m'.format(line=line))
+        return result
 
     rows           = get_terminal_rows()
-    display_amount = max(rows/2-1, 1)
 
-    if rows < 4: 
+    if rows < 6: 
         abort("the window is too small")
+    rows = rows-2
 
-    prompt_start   = PROMPT_CURRENT/display_amount*display_amount
-    prompt_end     = PROMPT_CURRENT/display_amount*display_amount+display_amount
+    idx = PROMPT_CURRENT
+    display_result = display(PROMPTS[idx]['example'], idx == PROMPT_CURRENT)
+    up_idx = idx-1
+    down_idx = idx+1
 
+    while len(display_result) < rows:
+        old_result = display_result[:]
+        if up_idx >= 0:
+            display_result = display(PROMPTS[up_idx]['example'], False) + display_result
+            if len(display_result) > rows:
+                display_result = old_result[:]
+                break
+        old_result = display_result[:]
+        if down_idx < len(PROMPTS):
+            display_result += display(PROMPTS[down_idx]['example'], False)
+            if len(display_result) > rows:
+                display_result = old_result[:]
+                break
+        up_idx   -= 1
+        down_idx += 1
 
-
-    if prompt_start > len(PROMPTS) - 1:
-        prompt_start = len(PROMPTS) - 1
-    if prompt_end >  len(PROMPTS) - 1:
-        prompt_end = len(PROMPTS)
-
-    # print(prompt_start, prompt_end)
-
-    print('')
-    for idx in xrange(prompt_start, prompt_end):
-        display(PROMPTS[idx]['example'], idx == PROMPT_CURRENT)
+        if up_idx < 0 and down_idx >= len(PROMPTS):
+            break
+        
+    print('\n'.join(display_result))
 
 
 def select_prompt(shell_info):
